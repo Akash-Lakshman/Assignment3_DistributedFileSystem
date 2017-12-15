@@ -1,20 +1,12 @@
-import atexit
-import logging
-import os
-import shelve
-
-import web
-
-import utils
+import web, utils, atexit, logging, os, shelve
 
 class NameServer:
-    #NameServer is responsible of the mapping between directory names and file servers.
 
     def GET(self, filepath):
-        #Return a server which hold the directory in which filepath is located
-
+     
         web.header('Content-Type', 'text/plain; charset=UTF-8')
         filepath = str(filepath)
+
         if filepath == '/':
             return '\n'.join('%s=%s' % (dirpath, _names[dirpath])
                     for dirpath in sorted(_names))
@@ -28,19 +20,20 @@ class NameServer:
 
 
     def POST(self, dirpath):
-        
+        """See _update (with add=True)."""
+
         return _update(str(dirpath))
 
     def DELETE(self, dirpath):
+        """See _update (with add=False)."""
 
         return _update(str(dirpath), False)
 
 
 def _update(dirpath, add=True):
-    #Add pair of directory/server to the name server if ADD= TRUE else REMOVE(DELETE)
-
+       
     web.header('Content-Type', 'text/plain; charset=UTF-8')
-        i = web.input()
+    i = web.input()
 
     if 'srv' not in i:
         raise web.badrequest()
@@ -70,6 +63,7 @@ def _update(dirpath, add=True):
 
 
 def _update_names(dirpath, srv, add=True):
+
     if dirpath[-1] == '/':
         dirpath = os.path.dirname(dirpath)
 
