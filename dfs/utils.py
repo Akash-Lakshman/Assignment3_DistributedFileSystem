@@ -66,7 +66,15 @@ def is_locked(filepath, host, port, lock_id=None):
 @memoize
 def get_server(filepath, host, port):
 
-    return ''
+     with closing(HTTPConnection(host, port)) as con:
+        con.request('GET', filepath)
+        response = con.getresponse()
+        status, srv = response.status, response.read()
+
+    if status == 200:
+        return srv
+
+    return None
 
 
 def get_lock(filepath, host, port):

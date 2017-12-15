@@ -16,7 +16,15 @@ class FileServer:
         #Return the requested file if it's not locked
 
         web.header('Content-Type', 'text/plain; charset=UTF-8')
-        return ''
+        _raise_if_dir_or_not_servable(filepath)
+        _raise_if_not_exists(filepath)
+        _raise_if_locked(filepath)
+
+        p = _get_local_path(filepath)
+        web.header('Last-Modified', time.ctime(os.path.getmtime(p)))
+        with open(p) as f:
+            return f.read()
+        
 
     def PUT(self, filepath):
         #Replace the file by the data in the request.
@@ -45,16 +53,27 @@ def _raise_if_locked(filepath):
 
 def _raise_if_dir_or_not_servable(filepath):
     #Raise 406 if not servable
-    pass
+    p = _get_local_path(filepath)
+
+    if (os.path.dirname(filepath) not in _config['directories'] or
+            os.path.isdir(p)):
+        # request a file which this server isn't supposed to serve!
+        raise web.notacceptable()
 
 
 def _raise_if_not_exists(filepath):
-    pass
+    p = _get_local_path(filepath)
+
+    if not os.path.exists(p):
+        raise web.webapi.HTTPError('204 No Content', {'Content-Type': 'plain/text'})
+    
 
 def _init_file_server():
-    #notify the nameserver about out directories
-    pass
-
+    host, port = utils.get_host_port(_config['nameserver'])
+    with closing(HTTPConnection(host, port)) as con:
+        data = 'srv=%s&dirs=%s' % (_config['srv'], '\n'.join(_config['directories']),)
+        con.request('POST', '/', data)
+    
 
 _config = {
         'lockserver': None,
